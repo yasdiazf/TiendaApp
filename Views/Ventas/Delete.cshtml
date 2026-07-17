@@ -1,0 +1,30 @@
+@model TiendaApp.Models.Venta
+
+@{
+    ViewData["Title"] = "Eliminar Venta";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">⚠️ Confirmar Eliminación</h4>
+                </div>
+                <div class="card-body">
+                    <p class="fs-5">¿Estás seguro de que deseas eliminar la venta <strong>#@Model.Id</strong>?</p>
+                    <ul>
+                        <li><strong>Monto:</strong> Bs. @Model.Monto.ToString("N2")</li>
+                        <li><strong>Fecha:</strong> @Model.Fecha.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</li>
+                    </ul>
+
+                    <form asp-action="Delete" method="post" class="mt-4 d-flex justify-content-between">
+                        <input type="hidden" asp-for="Id" />
+                        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-danger">Sí, Eliminar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

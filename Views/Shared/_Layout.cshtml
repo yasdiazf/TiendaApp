@@ -1,5 +1,13 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var rol = HttpContextAccessor.HttpContext?.Session.GetString("UsuarioRol");
+    var usuarioNombre = HttpContextAccessor.HttpContext?.Session.GetString("UsuarioNombre");
+}
+
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,38 +21,74 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">TiendaApp</a>
+                <a class="navbar-brand fw-bold text-primary" asp-area="" asp-controller="Home" asp-action="Index">🛒 La Económica</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
+                        
+                        <!-- 1. INICIO -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
+                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">🏠 Inicio</a>
                         </li>
+
+                        <!-- 2. INICIAR SESIÓN -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Productos" asp-action="Index">Gestión de Productos</a>
+                            <a class="nav-link text-dark fw-bold" asp-controller="Account" asp-action="Login">🔑 Iniciar Sesión</a>
                         </li>
+
+                        <!-- 3. GESTIÓN DE PRODUCTOS (Visible para todos, pero el controlador bloqueará si no es Almacén) -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-controller="Productos" asp-action="Index">📦 Gestión de Productos</a>
                         </li>
+
+                        <!-- 4. OFERTAS ESPECIALES (SEO) -->
+                        <li class="nav-item">
+                            <a class="nav-link text-danger fw-bold" href="/promociones-del-mes/barrio-norte">
+                                🔥 Ofertas Especiales
+                            </a>
+                        </li>
+
+                        <!-- 5. GESTIÓN DE VENTAS -->
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="Ventas" asp-action="Index">🛒 Gestión de Ventas</a>
+                        </li>
+
+                    </ul>
+
+                    <!-- DERECHA: ESTADO DE LA SESIÓN ACTIVA -->
+                    <ul class="navbar-nav align-items-center">
+                        @if (!string.IsNullOrEmpty(rol))
+                        {
+                            <li class="nav-item">
+                                <span class="nav-link text-muted me-2">
+                                    👤 @(usuarioNombre ?? "Usuario") <small class="text-primary">(@rol)</small>
+                                </span>
+                            </li>
+                            <li class="nav-item">
+                                <a class="btn btn-outline-danger btn-sm" asp-controller="Account" asp-action="Logout">🚪 Cerrar Sesión</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
+
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - TiendaApp - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <footer class="border-top footer text-muted mt-auto py-3 bg-light">
+        <div class="container text-center">
+            &copy; 2026 - TiendaApp "La Económica"
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

@@ -9,4 +9,5 @@ public class ApplicationDbContext : DbContext
         : base(options) { }
 
     public DbSet<Producto> Productos { get; set; } = null!;
+public DbSet<Venta> Ventas { get; set; }
 }

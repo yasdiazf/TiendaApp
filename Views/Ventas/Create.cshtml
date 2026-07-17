@@ -1,0 +1,226 @@
+@model TiendaApp.Models.Venta
+
+@{
+    ViewData["Title"] = "Registrar Nueva Venta";
+    var productos = ViewBag.Productos as List<TiendaApp.Models.Producto> ?? new List<TiendaApp.Models.Producto>();
+}
+
+<div class="container-fluid mt-3">
+    <h2 class="mb-4">🛒 Punto de Venta</h2>
+
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">📦 Seleccionar Productos</h5>
+                </div>
+                <div class="card-body" style="max-height: 520px; overflow-y: auto;">
+                    @if (productos.Any())
+                    {
+                        <div class="row g-3">
+                            @foreach (var prod in productos)
+                            {
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="card h-100 border shadow-sm">
+                                        <div class="card-body d-flex flex-column justify-content-between p-3 text-center">
+                                            <div>
+                                                <h6 class="fw-bold text-dark mb-1">@prod.Nombre</h6>
+                                                <span class="badge bg-secondary mb-2">Stock: @prod.Stock</span>
+                                                <p class="text-success fw-bold fs-5 mb-0">Bs. @prod.Precio.ToString("N2")</p>
+                                            </div>
+                                            <button type="button" class="btn btn-outline-primary btn-sm mt-3 w-100" 
+                                                    onclick="agregarAlCarrito('@prod.Nombre', @prod.Precio.ToString(System.Globalization.CultureInfo.InvariantCulture))">
+                                                ➕ Agregar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning text-center">
+                            No hay productos registrados en el almacén.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">📋 Detalle de la Venta</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm align-middle" id="tablaCarrito">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center">Cant.</th>
+                                <th>Subtotal</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="bodyCarrito">
+                            <tr id="rowVacio">
+                                <td colspan="4" class="text-center text-muted py-3">
+                                    Haz clic en un producto para agregarlo a la venta.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <hr />
+
+                    <form asp-action="Create" method="post" id="formVenta">
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
+                            <span class="fs-4 fw-bold">TOTAL A PAGAR:</span>
+                            <span class="fs-3 fw-bold text-success" id="textTotal">Bs. 0.00</span>
+                        </div>
+                        <input type="hidden" asp-for="Monto" id="inputMontoTotal" value="0" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Método de Pago:</label>
+                            <select asp-for="MetodoPago" class="form-select" id="selectMetodoPago" onchange="cambiarMetodoPago()">
+                                <option value="Efectivo">💵 Efectivo</option>
+                                <option value="QR">📱 Pago QR</option>
+                                <option value="Tarjeta">💳 Tarjeta de Débito/Crédito</option>
+                            </select>
+                        </div>
+
+                        <div id="seccionEfectivo">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Dinero Recibido (Bs):</label>
+                                <input asp-for="MontoRecibido" type="number" step="0.01" class="form-control form-control-lg" id="inputMontoRecibido" oninput="calcularCambio()" placeholder="Ej: 300" />
+                            </div>
+
+                            <div class="p-3 mb-3 bg-light rounded d-flex justify-content-between align-items-center border">
+                                <span class="fw-bold fs-5">Cambio a Entregar:</span>
+                                <span class="fs-3 fw-bold text-primary" id="textCambio">Bs. 0.00</span>
+                            </div>
+                            <input type="hidden" asp-for="Cambio" id="inputCambio" value="0" />
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-success btn-lg fw-bold" id="btnCompletar" disabled>
+                                ✅ Completar y Guardar Venta
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let carrito = [];
+        let totalVenta = 0;
+
+        function agregarAlCarrito(nombre, precio) {
+            let item = carrito.find(p => p.nombre === nombre);
+            if (item) {
+                item.cantidad += 1;
+                item.subtotal = item.cantidad * item.precio;
+            } else {
+                carrito.push({
+                    nombre: nombre,
+                    precio: parseFloat(precio),
+                    cantidad: 1,
+                    subtotal: parseFloat(precio)
+                });
+            }
+            renderizarCarrito();
+        }
+
+        function cambiarCantidad(index, cambio) {
+            carrito[index].cantidad += cambio;
+            if (carrito[index].cantidad <= 0) {
+                carrito.splice(index, 1);
+            } else {
+                carrito[index].subtotal = carrito[index].cantidad * carrito[index].precio;
+            }
+            renderizarCarrito();
+        }
+
+        function renderizarCarrito() {
+            let tbody = document.getElementById("bodyCarrito");
+            tbody.innerHTML = "";
+            totalVenta = 0;
+
+            if (carrito.length === 0) {
+                tbody.innerHTML = `<tr id="rowVacio"><td colspan="4" class="text-center text-muted py-3">Haz clic en un producto para agregarlo a la venta.</td></tr>`;
+            } else {
+                carrito.forEach((prod, i) => {
+                    totalVenta += prod.subtotal;
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><strong>${prod.nombre}</strong></td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="cambiarCantidad(${i}, -1)">-</button>
+                                <span class="mx-1 fw-bold">${prod.cantidad}</span>
+                                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="cambiarCantidad(${i}, 1)">+</button>
+                            </td>
+                            <td>Bs. ${prod.subtotal.toFixed(2)}</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-1" onclick="cambiarCantidad(${i}, -${prod.cantidad})">✕</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // 💡 Cambio en el Total acumulado
+            document.getElementById("textTotal").innerText = `Bs. ${totalVenta.toFixed(2)}`;
+            document.getElementById("inputMontoTotal").value = totalVenta.toFixed(2);
+
+            calcularCambio();
+        }
+
+        function cambiarMetodoPago() {
+            let metodo = document.getElementById("selectMetodoPago").value;
+            let seccionEfectivo = document.getElementById("seccionEfectivo");
+
+            if (metodo === "Efectivo") {
+                seccionEfectivo.style.display = "block";
+            } else {
+                seccionEfectivo.style.display = "none";
+            }
+            calcularCambio();
+        }
+
+        function calcularCambio() {
+            let metodo = document.getElementById("selectMetodoPago").value;
+            let btnCompletar = document.getElementById("btnCompletar");
+
+            if (totalVenta <= 0) {
+                btnCompletar.disabled = true;
+                return;
+            }
+
+            if (metodo === "Efectivo") {
+                let recibido = parseFloat(document.getElementById("inputMontoRecibido").value) || 0;
+                let cambio = recibido - totalVenta;
+
+                if (recibido >= totalVenta) {
+                    // 💡 Cambio en el texto de entrega del vuelto
+                    document.getElementById("textCambio").innerText = `Bs. ${cambio.toFixed(2)}`;
+                    document.getElementById("textCambio").className = "fs-3 fw-bold text-success";
+                    document.getElementById("inputCambio").value = cambio.toFixed(2);
+                    btnCompletar.disabled = false;
+                } else {
+                    document.getElementById("textCambio").innerText = "Monto insuficiente";
+                    document.getElementById("textCambio").className = "fs-4 fw-bold text-danger";
+                    btnCompletar.disabled = true;
+                }
+            } else {
+                document.getElementById("inputCambio").value = 0;
+                btnCompletar.disabled = false;
+            }
+        }
+    </script>
+}

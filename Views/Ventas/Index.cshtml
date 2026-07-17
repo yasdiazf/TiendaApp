@@ -1,0 +1,69 @@
+@model IEnumerable<TiendaApp.Models.Venta>
+
+@{
+    ViewData["Title"] = "Gestión de Ventas";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>🛒 Gestión de Ventas</h2>
+        <a asp-action="Create" class="btn btn-success">Registrar Nueva Venta</a>
+    </div>
+
+    <table class="table table-striped table-hover shadow-sm align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Monto Total</th>
+                <th>ID Usuario</th>
+                <th>Detalle / Observación</th>
+                <th class="text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                @foreach (var venta in Model)
+                {
+                    <tr>
+                        <td>@venta.Id</td>
+                        <td>@venta.Fecha.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="fw-bold text-success">Bs. @venta.Monto.ToString("N2")</td>
+                        <td>@venta.UsuarioId</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(venta.Observacion))
+                            {
+                                @if (venta.Observacion.Contains("Ofertas Especiales"))
+                                {
+                                    <span class="badge bg-warning text-dark me-1">🔥 Oferta Especial</span>
+                                    <small class="text-muted">@venta.Observacion.Replace("🔥 Compra del área Ofertas Especiales (-20% Desc.):", "")</small>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary me-1">Venta Normal</span>
+                                    <small class="text-muted">@venta.Observacion</small>
+                                }
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary me-1">Venta Normal</span>
+                                <small class="text-muted">Sin detalle</small>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <a asp-action="Edit" asp-route-id="@venta.Id" class="btn btn-warning btn-sm">Editar</a>
+                            <a asp-action="Delete" asp-route-id="@venta.Id" class="btn btn-danger btn-sm">Eliminar</a>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No hay ventas registradas aún.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
